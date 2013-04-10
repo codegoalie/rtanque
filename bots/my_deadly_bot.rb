@@ -7,15 +7,21 @@ class MyDeadlyBot < RTanque::Bot::Brain
   CRUISING_SPEED = MAX_SPEED / 2
 
   def tick!
-    if @target
+    ignore
+
+    if target
       # Destroy
 
-      @target = acquire
+      if target.distance < 300
+        if target.distance < 50
+          puts "Locked in!!"
+          command.speed = 0
+        else
+          puts "Target acquired: #{target.name}"
 
-      if @target.distance < 300
-        puts "Target acquired: #{@target.name}"
-        persue
-        fire
+          persue
+          fire
+        end
       else
         ignore
         recon
@@ -25,20 +31,20 @@ class MyDeadlyBot < RTanque::Bot::Brain
     end
   end
 
-  def acquire
-    sensors.radar.sort_by(&:distance).first
+  def target
+    @target ||= sensors.radar.sort_by(&:distance).first
   end
 
   def persue
-    command.radar_heading = @target.heading
-    command.turret_heading = @target.heading
-    command.heading = @target.heading
+    command.radar_heading = target.heading
+    command.turret_heading = target.heading
+    command.heading = target.heading
     command.speed = MAX_SPEED
   end
 
   def fire
-    if (@target.heading.delta(sensors.turret_heading)).abs < TURRET_FIRE_RANGE
-      command.fire(@target.distance > 200 ? MAX_FIRE_POWER : MIN_FIRE_POWER)
+    if (target.heading.delta(sensors.turret_heading)).abs < TURRET_FIRE_RANGE
+      command.fire(target.distance > 200 ? MAX_FIRE_POWER : MIN_FIRE_POWER)
     end
   end
 
